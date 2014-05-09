@@ -17,6 +17,7 @@ Contributers
 
 * [vtsatskin](https://github.com/vtsatskin)
 * [1337](https://github.com/1337)
+* [mrj0](https://github.com/mrj0)
 
 Planned Additions
 -----------------
