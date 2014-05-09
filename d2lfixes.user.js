@@ -5,16 +5,22 @@
 // @include			https://worldclass.regis.edu/*
 // @match			https://worldclass.regis.edu/*
 // @description		Fixes various issues with the D2L platform. 
-// @version			0.1
+// @version			1.1
 // ==/UserScript==
 
 var discussRegex = new RegExp("d2l/lms/discussions/");
 var emailRegex = new RegExp("d2l/lms/email(/|$)");
+var messageRegex = new RegExp("^/d2l/lms/discussions/messageLists/message_update");
 
 if (document.URL.match(discussRegex)) {
     addStylesheet();
 	processPosts();
 	processDiscussionList();
+}
+
+if (window.location.pathname.match(messageRegex)) {
+    // timeout is needed because the frame may not have fully loaded
+    setTimeout(enableSpellcheck, 300);
 }
 
 removeLinkDecorations();
@@ -30,16 +36,18 @@ window.addEventListener('load', function () {
                 oReq.onreadystatechange = function (oEvent) {
                   if (oReq.readyState === 4) {
                     if (oReq.status === 200) {
-                      // prevents the 'session expired' alert
-	                  D2L.PT.Auth.SessionTimeout.m_timeoutIsHandled = true;
-                      console && console.log && console.log("Successfully polled D2L!");
-                    } else {
-                      console && console.error && console.error("Polling error: ", oReq.statusText);
+                        // prevents the 'session expired' alert
+	                    D2L.PT.Auth.SessionTimeout.m_timeoutIsHandled = true;
+                        console && console.log && console.log("Successfully polled D2L!");
+                    } 
+                    else {
+                        console && console.error && console.error("Polling error: ", oReq.statusText);
                     }
                   }
                 };
                 oReq.send(null);
-            } catch (err) {
+            }
+            catch (err) {
                 console && console.error && console.error(err);
             }
         };
@@ -63,12 +71,6 @@ function addStylesheet() {
 function convertToArray(domObj) {
 	return Array.prototype.slice.call(domObj, 0);
 }
-
-/* Placeholder...
-function removeHeaderItems() {
-
-}
-*/
 
 function removeLinkDecorations() {
 	var links = convertToArray( document.getElementsByTagName('a') );
@@ -132,4 +134,25 @@ function removeCurrent() {
 function makeCurrent(e) {
     removeCurrent();
     this.classList.add('gm-active');
+}
+
+function enableSpellcheck() {
+    function remove_spellcheck(doc) {
+        var list = convertToArray(doc.getElementsByTagName('body'));
+        list.forEach(function(body) {
+            body.removeAttribute("spellcheck");
+        });
+    }
+    
+    function process_frames(doc) {
+        var list = convertToArray(doc.getElementsByTagName("iframe"));
+        list.forEach(function(frame) {
+            remove_spellcheck(frame.contentDocument);
+            process_frames(frame.contentDocument);
+        });
+
+        remove_spellcheck(doc);
+    }
+
+    process_frames(document);
 }
